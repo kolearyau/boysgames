@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🏎️ Race Car Memory Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: radial-gradient(ellipse at top, #1a0a2e 0%, #0a0015 50%, #1a0505 100%);
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px 24px;
+    overflow-x: hidden;
+  }
+
+  .checker {
+    display: flex;
+    margin: 6px 0;
+  }
+  .checker-cell {
+    width: 22px; height: 22px;
+  }
+
+  h1 {
+    color: #FFD700;
+    font-size: clamp(1.3rem, 5vw, 2rem);
+    text-align: center;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px #FFD700, 0 0 40px #FF8800;
+    margin: 6px 0 4px;
+  }
+
+  .subtitle {
+    color: #FF6644;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .scorebar {
+    display: flex;
+    gap: 28px;
+    background: rgba(255,255,255,0.07);
+    padding: 8px 28px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,215,0,0.3);
+    margin-bottom: 18px;
+  }
+  .score-item { text-align: center; }
+  .score-num { color: #FFD700; font-size: 1.5rem; font-weight: bold; }
+  .score-match { color: #44FF44; font-size: 1.5rem; font-weight: bold; }
+  .score-label { color: #aaa; font-size: 0.65rem; letter-spacing: 1px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    max-width: 560px;
+    width: 100%;
+    padding: 0 4px;
+  }
+
+  .card-wrapper {
+    perspective: 600px;
+    aspect-ratio: 1.3 / 1;
+    cursor: pointer;
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(.4,1.4,.6,1);
+  }
+
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-front, .card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    border: 3px solid #e94560;
+    box-shadow: 0 4px 15px rgba(233,69,96,0.3);
+    font-size: 2rem;
+  }
+
+  .card-front {
+    background: linear-gradient(135deg, #1a1a1a, #2a2a3a);
+    border: 3px solid #555;
+    transform: rotateY(180deg);
+    padding: 4px;
+    gap: 2px;
+  }
+
+  .card-front.matched {
+    background: linear-gradient(135deg, #0d2b0d, #1a4a1a);
+    border-color: #44FF44;
+    box-shadow: 0 0 18px rgba(68,255,68,0.5);
+  }
+
+  .car-name {
+    font-size: clamp(5px, 1.5vw, 9px);
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #aaa;
+    text-align: center;
+  }
+  .card-front.matched .car-name { color: #44FF44; }
+
+  .new-race-btn {
+    margin-top: 20px;
+    padding: 13px 36px;
+    background: linear-gradient(135deg, #e94560, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-family: monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(233,69,96,0.5);
+    text-transform: uppercase;
+    -webkit-appearance: none;
+  }
+
+  /* WIN OVERLAY */
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .win-overlay.show { display: flex; }
+
+  .win-box {
+    background: linear-gradient(135deg, #1a1a0a, #2a2a00);
+    border: 4px solid #FFD700;
+    border-radius: 24px;
+    padding: 36px 44px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(255,215,0,0.6);
+    max-width: 320px;
+    width: 90%;
+  }
+  .win-trophy { font-size: 3.5rem; margin-bottom: 8px; }
+  .win-title { color: #FFD700; font-size: 2rem; font-weight: bold; letter-spacing: 3px; text-shadow: 0 0 20px #FFD700; }
+  .win-moves { color: white; font-size: 1rem; margin: 10px 0 6px; }
+  .win-stars { font-size: 2rem; margin: 8px 0 16px; }
+  .win-cars { font-size: 2.2rem; margin-bottom: 20px; }
+  .race-again-btn {
+    padding: 14px 36px;
+    background: linear-gradient(135deg, #FFD700, #FF8800);
+    color: #000;
+    border: none;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-family: monospace;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 2px;
+    -webkit-appearance: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="checker" id="checker-top"></div>
+
+<h1>🏎️ Race Car Memory! 🏎️</h1>
+<p class="subtitle">Find all the matching cars!</p>
+
+<div class="scorebar">
+  <div class="score-item">
+    <div class="score-num" id="moves-count">0</div>
+    <div class="score-label">MOVES</div>
+  </div>
+  <div class="score-item">
+    <div class="score-match" id="match-count">0/6</div>
+    <div class="score-label">MATCHED</div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<button class="new-race-btn" onclick="initGame()">🔄 New Race!</button>
+
+<div class="checker" id="checker-bottom"></div>
+
+<!-- WIN SCREEN -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-box">
+    <div class="win-trophy">🏆</div>
+    <div class="win-title">YOU WIN!</div>
+    <div class="win-moves" id="win-moves-text"></div>
+    <div class="win-stars" id="win-stars"></div>
+    <div class="win-cars">🏎️🏎️🏎️</div>
+    <button class="race-again-btn" onclick="initGame(); document.getElementById('win-overlay').classList.remove('show')">🏁 RACE AGAIN!</button>
+  </div>
+</div>
+
+<script>
+const CARS = [
+  { id:1, name:"RED ROCKET",    body:"#FF4444", cabin:"#FF2222", stripe:"#FFD700", num:"1"  },
+  { id:2, name:"BLUE BOLT",     body:"#2255FF", cabin:"#1144FF", stripe:"#00FFFF", num:"7"  },
+  { id:3, name:"GREEN ZOOM",    body:"#00CC33", cabin:"#00AA22", stripe:"#FFFF00", num:"4"  },
+  { id:4, name:"ORANGE FLASH",  body:"#FF7722", cabin:"#FF6600", stripe:"#FFFFFF", num:"9"  },
+  { id:5, name:"PURPLE SPEED",  body:"#9911DD", cabin:"#8800CC", stripe:"#FF88FF", num:"3"  },
+  { id:6, name:"YELLOW BLAZE",  body:"#FFCC00", cabin:"#CCAA00", stripe:"#FF3300", num:"5"  },
+];
+
+function carSVG(car) {
+  return `<svg viewBox="0 0 120 58" style="width:90%;display:block;margin:0 auto">
+    <ellipse cx="60" cy="54" rx="44" ry="5" fill="rgba(0,0,0,0.25)"/>
+    <rect x="10" y="27" width="100" height="22" rx="6" fill="${car.body}"/>
+    <path d="M32,27 Q38,11 55,10 Q72,9 82,27 Z" fill="${car.cabin}"/>
+    <path d="M38,26 Q43,16 55,15 Q67,14 74,26 Z" fill="#AADDFF" opacity="0.85"/>
+    <rect x="10" y="34" width="100" height="5" rx="2" fill="${car.stripe}" opacity="0.7"/>
+    <circle cx="60" cy="38" r="9" fill="white" opacity="0.9"/>
+    <text x="60" y="43" text-anchor="middle" font-size="11" font-weight="bold" fill="${car.cabin}" font-family="monospace">${car.num}</text>
+    <circle cx="88" cy="49" r="9" fill="#222"/><circle cx="88" cy="49" r="5" fill="#555"/><circle cx="88" cy="49" r="2" fill="#999"/>
+    <circle cx="32" cy="49" r="9" fill="#222"/><circle cx="32" cy="49" r="5" fill="#555"/><circle cx="32" cy="49" r="2" fill="#999"/>
+    <rect x="8" y="23" width="4" height="14" rx="2" fill="${car.cabin}"/>
+    <rect x="4" y="21" width="12" height="4" rx="2" fill="${car.cabin}"/>
+    <rect x="110" y="37" width="10" height="4" rx="2" fill="#888"/>
+    <ellipse cx="114" cy="32" rx="4" ry="3" fill="#FFFFAA" opacity="0.9"/>
+  </svg>`;
+}
+
+// Build checkers
+function buildChecker(id, flip) {
+  const el = document.getElementById(id);
+  for (let i = 0; i < 22; i++) {
+    const d = document.createElement('div');
+    d.className = 'checker-cell';
+    d.style.background = (i % 2 === (flip ? 1 : 0)) ? 'white' : 'black';
+    d.style.border = '1px solid #333';
+    el.appendChild(d);
+  }
+}
+buildChecker('checker-top', false);
+buildChecker('checker-bottom', true);
+
+let flipped = [], matched = [], moves = 0, locked = false, cards = [];
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function initGame() {
+  flipped = []; matched = []; moves = 0; locked = false;
+  cards = shuffle([...CARS, ...CARS].map((car, i) => ({ uid: `${car.id}-${i}`, car })));
+  document.getElementById('moves-count').textContent = '0';
+  document.getElementById('match-count').textContent = `0/${CARS.length}`;
+  document.getElementById('win-overlay').classList.remove('show');
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  cards.forEach((card, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    const isFlipped = flipped.includes(i) || matched.includes(card.car.id);
+    const isMatched = matched.includes(card.car.id);
+    wrapper.innerHTML = `
+      <div class="card-inner ${isFlipped ? 'flipped' : ''}" id="card-${i}">
+        <div class="card-back">🏁</div>
+        <div class="card-front ${isMatched ? 'matched' : ''}">
+          ${carSVG(card.car)}
+          <div class="car-name">${card.car.name}</div>
+          ${isMatched ? '<div style="font-size:14px">✅</div>' : ''}
+        </div>
+      </div>`;
+    wrapper.addEventListener('click', () => handleClick(i));
+    grid.appendChild(wrapper);
+  });
+}
+
+function handleClick(i) {
+  if (locked || flipped.includes(i) || matched.includes(cards[i].car.id)) return;
+  if (flipped.length === 2) return;
+
+  flipped.push(i);
+  document.getElementById(`card-${i}`).classList.add('flipped');
+
+  if (flipped.length === 2) {
+    moves++;
+    document.getElementById('moves-count').textContent = moves;
+    const [a, b] = flipped;
+    if (cards[a].car.id === cards[b].car.id) {
+      matched.push(cards[a].car.id);
+      document.getElementById('match-count').textContent = `${matched.length}/${CARS.length}`;
+      // update matched cards visually
+      [a, b].forEach(idx => {
+        const front = document.querySelector(`#card-${idx} .card-front`);
+        if (front) { front.classList.add('matched'); front.innerHTML = carSVG(cards[idx].car) + `<div class="car-name">${cards[idx].car.name}</div><div style="font-size:14px">✅</div>`; }
+      });
+      flipped = [];
+      if (matched.length === CARS.length) setTimeout(showWin, 600);
+    } else {
+      locked = true;
+      setTimeout(() => {
+        flipped.forEach(idx => document.getElementById(`card-${idx}`).classList.remove('flipped'));
+        flipped = [];
+        locked = false;
+      }, 1100);
+    }
+  }
+}
+
+function showWin() {
+  const stars = moves <= 8 ? 3 : moves <= 13 ? 2 : 1;
+  document.getElementById('win-moves-text').textContent = `Finished in ${moves} moves!`;
+  document.getElementById('win-stars').textContent = '⭐'.repeat(stars) + '🌑'.repeat(3 - stars);
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+initGame();
+</script>
+</body>
+</html>

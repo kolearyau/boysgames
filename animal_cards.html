@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Lachie's Animal Cards!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    min-height: 100vh;
+    background: #fff9f0;
+    background-image: radial-gradient(circle at 20% 20%, #ffe0b2 0%, transparent 50%),
+                      radial-gradient(circle at 80% 80%, #c8e6c9 0%, transparent 50%),
+                      radial-gradient(circle at 50% 50%, #bbdefb 0%, transparent 70%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.8rem);
+    color: #ff6b35;
+    text-shadow: 3px 3px 0 #ffcc02, 5px 5px 0 rgba(0,0,0,0.1);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 0 12px;
+  }
+
+  .subtitle {
+    font-family: 'Nunito', sans-serif;
+    font-size: clamp(0.85rem, 2.8vw, 1.2rem);
+    color: #7c6f64;
+    margin-bottom: 18px;
+    font-weight: 700;
+  }
+
+  .card-scene {
+    width: min(310px, 78vw);
+    height: min(390px, 60vh);
+    perspective: 1000px;
+    cursor: pointer;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 28px;
+  }
+
+  .card.flipped { transform: rotateY(180deg); }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #ff6b35, #ff8c42);
+    border: 6px solid #fff;
+  }
+
+  .card-back-pattern {
+    width: 100%;
+    height: 100%;
+    border-radius: 22px;
+    background-image: radial-gradient(circle, rgba(255,255,255,0.15) 2px, transparent 2px);
+    background-size: 28px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .card-back-icon {
+    font-size: clamp(5rem, 15vw, 8rem);
+    animation: wiggle 2s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+  }
+
+  .tap-hint {
+    font-size: clamp(1.2rem, 4vw, 1.6rem);
+    color: rgba(255,255,255,0.95);
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    letter-spacing: 1px;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-5deg) scale(1); }
+    50% { transform: rotate(5deg) scale(1.05); }
+  }
+
+  .card-front {
+    background: white;
+    border: 6px solid #ffcc02;
+    transform: rotateY(180deg);
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .animal-bg {
+    width: 100%;
+    flex: 1;
+    border-radius: 18px;
+    background: #fff9e0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .animal-svg {
+    width: 94%;
+    height: 94%;
+    max-width: 260px;
+  }
+
+  .animal-name {
+    font-size: clamp(2rem, 7vw, 3rem);
+    color: #ff6b35;
+    text-align: center;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.08);
+    letter-spacing: 1px;
+  }
+
+  .sound-btn {
+    background: #ff6b35;
+    border: none;
+    border-radius: 60px;
+    padding: 15px 32px;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1.2rem, 4.5vw, 1.8rem);
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.1);
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .sound-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+  }
+
+  .sound-btn.hidden { visibility: hidden; }
+
+  .next-btn {
+    background: white;
+    border: 4px solid #ff6b35;
+    border-radius: 60px;
+    padding: 12px 26px;
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(1rem, 3.8vw, 1.4rem);
+    color: #ff6b35;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #ff6b35;
+    transition: transform 0.1s, box-shadow 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .next-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #ff6b35;
+  }
+
+  .buttons-row {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .burst {
+    position: fixed;
+    pointer-events: none;
+    font-size: 2.5rem;
+    animation: burst-out 1.2s ease-out forwards;
+    z-index: 100;
+  }
+
+  @keyframes burst-out {
+    0% { transform: scale(0) rotate(0deg); opacity: 1; }
+    100% { transform: scale(2.5) rotate(360deg) translateY(-80px); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🐾 Lachie's Animal Cards!</h1>
+<p class="subtitle">Tap the card to see who's hiding!</p>
+
+<div class="card-scene" id="cardScene" onclick="flipCard()">
+  <div class="card" id="card">
+    <div class="card-face card-back">
+      <div class="card-back-pattern">
+        <div class="card-back-icon">🃏</div>
+        <div class="tap-hint">TAP ME!</div>
+      </div>
+    </div>
+    <div class="card-face card-front" id="cardFront">
+      <div class="animal-bg" id="animalBg">
+        <svg class="animal-svg" id="animalSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="animal-name" id="animalName"></div>
+    </div>
+  </div>
+</div>
+
+<div class="buttons-row">
+  <button class="sound-btn hidden" id="soundBtn" onclick="playSound()">🔊 Say it!</button>
+  <button class="next-btn" id="nextBtn" onclick="nextCard()">Next ➜</button>
+</div>
+
+<script>
+const animals = [
+  {
+    name: "Tiger",
+    color: "#e65100",
+    bg: "#fff3e0",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="148" rx="58" ry="44" fill="#ff8f00"/>
+        <ellipse cx="100" cy="155" rx="36" ry="28" fill="#fff8e1"/>
+        <circle cx="100" cy="82" r="50" fill="#ff8f00"/>
+        <ellipse cx="100" cy="92" rx="32" ry="26" fill="#fff8e1"/>
+        <polygon points="62,44 46,14 82,38" fill="#ff8f00"/>
+        <polygon points="138,44 154,14 118,38" fill="#ff8f00"/>
+        <polygon points="64,42 52,22 78,38" fill="#e91e63" opacity="0.5"/>
+        <polygon points="136,42 148,22 122,38" fill="#e91e63" opacity="0.5"/>
+        <circle cx="84" cy="72" r="13" fill="white"/>
+        <circle cx="116" cy="72" r="13" fill="white"/>
+        <circle cx="85" cy="73" r="8" fill="#1a1a1a"/>
+        <circle cx="117" cy="73" r="8" fill="#1a1a1a"/>
+        <circle cx="88" cy="70" r="3" fill="white"/>
+        <circle cx="120" cy="70" r="3" fill="white"/>
+        <ellipse cx="100" cy="92" rx="9" ry="7" fill="#c62828"/>
+        <path d="M88 100 Q100 112 112 100" stroke="#5d2020" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M74 50 Q78 66 72 80" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M100 40 Q100 54 100 68" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M126 50 Q122 66 128 80" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M58 132 Q70 148 62 164" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M142 132 Q130 148 138 164" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <rect x="65" y="180" width="22" height="18" rx="9" fill="#ff8f00"/>
+        <rect x="113" y="180" width="22" height="18" rx="9" fill="#ff8f00"/>
+        <path d="M154 152 Q176 138 170 112" stroke="#ff8f00" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M154 152 Q176 138 170 112" stroke="#1a1a1a" stroke-width="5" stroke-dasharray="10,10" fill="none" stroke-linecap="round"/>
+      `;
+    }
+  },
+  {
+    name: "Lion",
+    color: "#f57f17",
+    bg: "#fffde7",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="152" rx="55" ry="40" fill="#ffb300"/>
+        <ellipse cx="100" cy="158" rx="34" ry="26" fill="#fff9c4"/>
+        <circle cx="100" cy="84" r="58" fill="#e65100"/>
+        <circle cx="100" cy="84" r="46" fill="#f57f17"/>
+        <circle cx="100" cy="84" r="38" fill="#ffb300"/>
+        <ellipse cx="100" cy="96" rx="28" ry="22" fill="#fff9c4"/>
+        <circle cx="86" cy="76" r="12" fill="white"/>
+        <circle cx="114" cy="76" r="12" fill="white"/>
+        <circle cx="87" cy="77" r="7" fill="#33691e"/>
+        <circle cx="115" cy="77" r="7" fill="#33691e"/>
+        <circle cx="90" cy="74" r="3" fill="white"/>
+        <circle cx="118" cy="74" r="3" fill="white"/>
+        <ellipse cx="100" cy="96" rx="9" ry="7" fill="#c62828"/>
+        <path d="M88 104 Q100 116 112 104" stroke="#5d2020" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="66" cy="48" r="16" fill="#ffb300"/>
+        <circle cx="134" cy="48" r="16" fill="#ffb300"/>
+        <circle cx="66" cy="48" r="9" fill="#f57f17" opacity="0.6"/>
+        <circle cx="134" cy="48" r="9" fill="#f57f17" opacity="0.6"/>
+        <rect x="64" y="180" width="22" height="18" rx="9" fill="#ffb300"/>
+        <rect x="114" y="180" width="22" height="18" rx="9" fill="#ffb300"/>
+        <path d="M152 158 Q174 144 168 118" stroke="#ffb300" stroke-width="11" fill="none" stroke-linecap="round"/>
+        <circle cx="166" cy="114" r="12" fill="#e65100"/>
+      `;
+    }
+  },
+  {
+    name: "Zebra",
+    color: "#37474f",
+    bg: "#fafafa",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="148" rx="58" ry="42" fill="white" stroke="#1a1a1a" stroke-width="3"/>
+        <ellipse cx="78" cy="140" rx="11" ry="34" fill="#1a1a1a" transform="rotate(-8 78 140)"/>
+        <ellipse cx="100" cy="138" rx="11" ry="36" fill="#1a1a1a"/>
+        <ellipse cx="122" cy="140" rx="11" ry="34" fill="#1a1a1a" transform="rotate(8 122 140)"/>
+        <rect x="82" y="100" width="36" height="40" rx="14" fill="white" stroke="#1a1a1a" stroke-width="2.5"/>
+        <rect x="96" y="100" width="10" height="40" rx="5" fill="#1a1a1a"/>
+        <ellipse cx="100" cy="72" rx="30" ry="36" fill="white" stroke="#1a1a1a" stroke-width="3"/>
+        <path d="M78 52 Q82 66 76 80" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M100 44 Q100 58 100 72" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M122 52 Q118 66 124 80" stroke="#1a1a1a" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <rect x="88" y="34" width="9" height="20" rx="4" fill="#1a1a1a"/>
+        <rect x="103" y="34" width="9" height="18" rx="4" fill="#1a1a1a"/>
+        <ellipse cx="80" cy="44" rx="9" ry="15" fill="white" stroke="#1a1a1a" stroke-width="2.5" transform="rotate(-15 80 44)"/>
+        <ellipse cx="80" cy="44" rx="5" ry="9" fill="#ffccbc" transform="rotate(-15 80 44)"/>
+        <ellipse cx="120" cy="44" rx="9" ry="15" fill="white" stroke="#1a1a1a" stroke-width="2.5" transform="rotate(15 120 44)"/>
+        <ellipse cx="120" cy="44" rx="5" ry="9" fill="#ffccbc" transform="rotate(15 120 44)"/>
+        <circle cx="85" cy="66" r="10" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <circle cx="115" cy="66" r="10" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <circle cx="86" cy="67" r="6" fill="#1a1a1a"/>
+        <circle cx="116" cy="67" r="6" fill="#1a1a1a"/>
+        <circle cx="88" cy="65" r="2.5" fill="white"/>
+        <circle cx="118" cy="65" r="2.5" fill="white"/>
+        <ellipse cx="100" cy="96" rx="16" ry="10" fill="#f5f5f5" stroke="#ccc" stroke-width="1.5"/>
+        <ellipse cx="94" cy="98" rx="3.5" ry="4" fill="#aaa"/>
+        <ellipse cx="106" cy="98" rx="3.5" ry="4" fill="#aaa"/>
+        <rect x="64" y="180" width="16" height="20" rx="6" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <rect x="64" y="190" width="16" height="10" rx="4" fill="#1a1a1a"/>
+        <rect x="84" y="180" width="16" height="20" rx="6" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <rect x="84" y="190" width="16" height="10" rx="4" fill="#1a1a1a"/>
+        <rect x="100" y="180" width="16" height="20" rx="6" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <rect x="100" y="190" width="16" height="10" rx="4" fill="#1a1a1a"/>
+        <rect x="120" y="180" width="16" height="20" rx="6" fill="white" stroke="#1a1a1a" stroke-width="2"/>
+        <rect x="120" y="190" width="16" height="10" rx="4" fill="#1a1a1a"/>
+        <path d="M155 148 Q172 136 166 114" stroke="white" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="1,0"/>
+        <circle cx="165" cy="111" r="10" fill="#1a1a1a"/>
+      `;
+    }
+  },
+  {
+    name: "Elephant",
+    color: "#546e7a",
+    bg: "#eceff1",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="152" rx="65" ry="44" fill="#78909c"/>
+        <ellipse cx="100" cy="158" rx="40" ry="28" fill="#b0bec5"/>
+        <circle cx="100" cy="82" r="50" fill="#78909c"/>
+        <ellipse cx="52" cy="82" rx="30" ry="44" fill="#90a4ae"/>
+        <ellipse cx="52" cy="82" rx="20" ry="30" fill="#e8d5d8" opacity="0.5"/>
+        <ellipse cx="148" cy="82" rx="30" ry="44" fill="#90a4ae"/>
+        <ellipse cx="148" cy="82" rx="20" ry="30" fill="#e8d5d8" opacity="0.5"/>
+        <circle cx="100" cy="82" r="46" fill="#78909c"/>
+        <path d="M80 110 Q65 130 68 155 Q70 172 84 174 Q98 176 98 160 Q96 140 108 115" stroke="#78909c" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <ellipse cx="82" cy="172" rx="12" ry="8" fill="#607d8b"/>
+        <circle cx="83" cy="68" r="14" fill="white"/>
+        <circle cx="117" cy="68" r="14" fill="white"/>
+        <circle cx="84" cy="69" r="8" fill="#1a1a1a"/>
+        <circle cx="118" cy="69" r="8" fill="#1a1a1a"/>
+        <circle cx="87" cy="66" r="3" fill="white"/>
+        <circle cx="121" cy="66" r="3" fill="white"/>
+        <path d="M90 104 Q82 118 72 124" stroke="#fff9c4" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M110 104 Q118 118 128 124" stroke="#fff9c4" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <rect x="52" y="182" width="24" height="18" rx="10" fill="#607d8b"/>
+        <rect x="78" y="184" width="22" height="16" rx="9" fill="#607d8b"/>
+        <rect x="100" y="184" width="22" height="16" rx="9" fill="#607d8b"/>
+        <rect x="124" y="182" width="24" height="18" rx="10" fill="#607d8b"/>
+        <path d="M162 148 Q178 136 174 116" stroke="#78909c" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <circle cx="173" cy="113" r="8" fill="#546e7a"/>
+      `;
+    }
+  },
+  {
+    name: "Giraffe",
+    color: "#e65100",
+    bg: "#fffde7",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="162" rx="50" ry="36" fill="#ffcc02"/>
+        <ellipse cx="76" cy="152" rx="13" ry="16" fill="#bf360c" opacity="0.75"/>
+        <ellipse cx="122" cy="148" rx="12" ry="14" fill="#bf360c" opacity="0.75"/>
+        <ellipse cx="100" cy="175" rx="14" ry="12" fill="#bf360c" opacity="0.75"/>
+        <rect x="82" y="56" width="36" height="104" rx="18" fill="#ffcc02"/>
+        <ellipse cx="90" cy="75" rx="8" ry="10" fill="#bf360c" opacity="0.75"/>
+        <ellipse cx="112" cy="98" rx="7" ry="9" fill="#bf360c" opacity="0.75"/>
+        <ellipse cx="88" cy="118" rx="8" ry="9" fill="#bf360c" opacity="0.75"/>
+        <ellipse cx="100" cy="44" rx="26" ry="24" fill="#ffcc02"/>
+        <rect x="84" y="22" width="8" height="18" rx="4" fill="#8d6e63"/>
+        <circle cx="88" cy="21" r="5" fill="#6d4c41"/>
+        <rect x="108" y="22" width="8" height="18" rx="4" fill="#8d6e63"/>
+        <circle cx="112" cy="21" r="5" fill="#6d4c41"/>
+        <ellipse cx="76" cy="40" rx="9" ry="14" fill="#ffcc02" transform="rotate(-20 76 40)"/>
+        <ellipse cx="124" cy="40" rx="9" ry="14" fill="#ffcc02" transform="rotate(20 124 40)"/>
+        <circle cx="88" cy="38" r="10" fill="white"/>
+        <circle cx="112" cy="38" r="10" fill="white"/>
+        <circle cx="89" cy="39" r="6" fill="#33691e"/>
+        <circle cx="113" cy="39" r="6" fill="#33691e"/>
+        <circle cx="91" cy="37" r="2.5" fill="white"/>
+        <circle cx="115" cy="37" r="2.5" fill="white"/>
+        <ellipse cx="94" cy="58" rx="3.5" ry="4" fill="#bf360c" opacity="0.6"/>
+        <ellipse cx="106" cy="58" rx="3.5" ry="4" fill="#bf360c" opacity="0.6"/>
+        <rect x="58" y="188" width="16" height="18" rx="6" fill="#e65100"/>
+        <rect x="78" y="190" width="16" height="16" rx="6" fill="#e65100"/>
+        <rect x="106" y="190" width="16" height="16" rx="6" fill="#e65100"/>
+        <rect x="126" y="188" width="16" height="18" rx="6" fill="#e65100"/>
+        <path d="M148 163 Q165 150 160 132" stroke="#ffcc02" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <circle cx="159" cy="129" r="9" fill="#e65100"/>
+      `;
+    }
+  },
+  {
+    name: "Kangaroo",
+    color: "#8d6e63",
+    bg: "#fbe9e7",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <path d="M128 160 Q160 170 165 198" stroke="#a1887f" stroke-width="20" fill="none" stroke-linecap="round"/>
+        <ellipse cx="98" cy="148" rx="40" ry="44" fill="#a1887f"/>
+        <ellipse cx="98" cy="152" rx="24" ry="30" fill="#d7ccc8"/>
+        <ellipse cx="88" cy="158" rx="20" ry="15" fill="#8d6e63"/>
+        <circle cx="88" cy="145" r="12" fill="#ffcc80"/>
+        <circle cx="83" cy="139" r="5" fill="#ffcc80"/>
+        <circle cx="93" cy="139" r="5" fill="#ffcc80"/>
+        <circle cx="84" cy="144" r="3" fill="#5d4037"/>
+        <circle cx="92" cy="144" r="3" fill="#5d4037"/>
+        <path d="M72 172 Q58 186 48 196" stroke="#8d6e63" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <ellipse cx="44" cy="196" rx="16" ry="7" fill="#795548"/>
+        <path d="M116 168 Q130 184 140 194" stroke="#8d6e63" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <ellipse cx="144" cy="194" rx="16" ry="7" fill="#795548"/>
+        <ellipse cx="98" cy="108" rx="22" ry="24" fill="#a1887f"/>
+        <ellipse cx="98" cy="78" rx="28" ry="28" fill="#a1887f"/>
+        <ellipse cx="86" cy="46" rx="10" ry="22" fill="#a1887f" transform="rotate(-8 86 46)"/>
+        <ellipse cx="86" cy="46" rx="5" ry="14" fill="#e91e63" opacity="0.28" transform="rotate(-8 86 46)"/>
+        <ellipse cx="110" cy="46" rx="10" ry="22" fill="#a1887f" transform="rotate(8 110 46)"/>
+        <ellipse cx="110" cy="46" rx="5" ry="14" fill="#e91e63" opacity="0.28" transform="rotate(8 110 46)"/>
+        <circle cx="87" cy="74" r="10" fill="white"/>
+        <circle cx="109" cy="74" r="10" fill="white"/>
+        <circle cx="88" cy="75" r="6" fill="#4e342e"/>
+        <circle cx="110" cy="75" r="6" fill="#4e342e"/>
+        <circle cx="90" cy="73" r="2.5" fill="white"/>
+        <circle cx="112" cy="73" r="2.5" fill="white"/>
+        <ellipse cx="98" cy="88" rx="7" ry="5" fill="#5d4037"/>
+        <path d="M62 138 Q50 152 54 162" stroke="#a1887f" stroke-width="9" fill="none" stroke-linecap="round"/>
+        <path d="M130 140 Q142 154 138 164" stroke="#a1887f" stroke-width="9" fill="none" stroke-linecap="round"/>
+      `;
+    }
+  },
+  {
+    name: "Koala",
+    color: "#546e7a",
+    bg: "#e8f5e9",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <rect x="12" y="170" width="176" height="16" rx="8" fill="#795548"/>
+        <ellipse cx="100" cy="152" rx="46" ry="38" fill="#90a4ae"/>
+        <ellipse cx="100" cy="158" rx="28" ry="24" fill="#cfd8dc"/>
+        <path d="M56 148 Q40 165 52 178" stroke="#78909c" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M144 148 Q160 165 148 178" stroke="#78909c" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M50 176 Q44 182 46 188" stroke="#546e7a" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M54 178 Q50 185 52 191" stroke="#546e7a" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M150 176 Q156 182 154 188" stroke="#546e7a" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M146 178 Q150 185 148 191" stroke="#546e7a" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <circle cx="100" cy="82" r="48" fill="#90a4ae"/>
+        <circle cx="56" cy="46" r="28" fill="#b0bec5"/>
+        <circle cx="56" cy="46" r="18" fill="#eceff1"/>
+        <circle cx="56" cy="46" r="10" fill="#f5f5f5"/>
+        <circle cx="144" cy="46" r="28" fill="#b0bec5"/>
+        <circle cx="144" cy="46" r="18" fill="#eceff1"/>
+        <circle cx="144" cy="46" r="10" fill="#f5f5f5"/>
+        <circle cx="100" cy="82" r="42" fill="#90a4ae"/>
+        <ellipse cx="100" cy="94" rx="28" ry="22" fill="#b0bec5"/>
+        <ellipse cx="100" cy="90" rx="16" ry="11" fill="#37474f"/>
+        <ellipse cx="94" cy="90" rx="4" ry="5" fill="#263238" opacity="0.7"/>
+        <ellipse cx="106" cy="90" rx="4" ry="5" fill="#263238" opacity="0.7"/>
+        <circle cx="84" cy="72" r="11" fill="white"/>
+        <circle cx="116" cy="72" r="11" fill="white"/>
+        <circle cx="85" cy="73" r="6.5" fill="#1a237e"/>
+        <circle cx="117" cy="73" r="6.5" fill="#1a237e"/>
+        <circle cx="87" cy="71" r="2.5" fill="white"/>
+        <circle cx="119" cy="71" r="2.5" fill="white"/>
+        <path d="M91 103 Q100 110 109 103" stroke="#546e7a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      `;
+    }
+  },
+  {
+    name: "Wombat",
+    color: "#6d4c41",
+    bg: "#efebe9",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="158" rx="72" ry="36" fill="#8d6e63"/>
+        <ellipse cx="100" cy="162" rx="50" ry="24" fill="#a1887f"/>
+        <rect x="44" y="182" width="28" height="16" rx="10" fill="#795548"/>
+        <rect x="74" y="184" width="24" height="14" rx="9" fill="#795548"/>
+        <rect x="102" y="184" width="24" height="14" rx="9" fill="#795548"/>
+        <rect x="128" y="182" width="28" height="16" rx="10" fill="#795548"/>
+        <path d="M44 196 Q38 202 40 208" stroke="#5d4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M50 196 Q46 204 48 208" stroke="#5d4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M156 196 Q162 202 160 208" stroke="#5d4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <path d="M150 196 Q154 204 152 208" stroke="#5d4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="100" cy="90" rx="54" ry="38" fill="#8d6e63"/>
+        <ellipse cx="100" cy="108" rx="30" ry="16" fill="#795548"/>
+        <ellipse cx="100" cy="104" rx="18" ry="12" fill="#4e342e"/>
+        <ellipse cx="92" cy="104" rx="5" ry="6" fill="#3e2723"/>
+        <ellipse cx="108" cy="104" rx="5" ry="6" fill="#3e2723"/>
+        <circle cx="60" cy="60" r="18" fill="#8d6e63"/>
+        <circle cx="60" cy="60" r="10" fill="#a1887f"/>
+        <circle cx="140" cy="60" r="18" fill="#8d6e63"/>
+        <circle cx="140" cy="60" r="10" fill="#a1887f"/>
+        <circle cx="82" cy="80" r="11" fill="white"/>
+        <circle cx="118" cy="80" r="11" fill="white"/>
+        <circle cx="83" cy="81" r="6.5" fill="#212121"/>
+        <circle cx="119" cy="81" r="6.5" fill="#212121"/>
+        <circle cx="85" cy="79" r="2.5" fill="white"/>
+        <circle cx="121" cy="79" r="2.5" fill="white"/>
+        <path d="M88 116 Q100 112 112 116" stroke="#4e342e" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <ellipse cx="168" cy="150" rx="10" ry="7" fill="#795548"/>
+      `;
+    }
+  },
+  {
+    name: "Kookaburra",
+    color: "#1565c0",
+    bg: "#e3f2fd",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <rect x="18" y="172" width="164" height="14" rx="7" fill="#795548"/>
+        <ellipse cx="100" cy="152" rx="46" ry="36" fill="#fff9c4"/>
+        <ellipse cx="100" cy="148" rx="46" ry="32" fill="#1565c0"/>
+        <ellipse cx="100" cy="155" rx="30" ry="24" fill="#fff9c4"/>
+        <path d="M140 158 Q162 160 168 175" stroke="#1565c0" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <path d="M142 164 Q166 168 170 182" stroke="#0d47a1" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M138 152 Q160 150 168 162" stroke="#1976d2" stroke-width="7" fill="none" stroke-linecap="round"/>
+        <path d="M82 182 Q74 188 68 192" stroke="#f57f17" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M82 182 Q78 190 76 196" stroke="#f57f17" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M82 182 Q88 190 90 196" stroke="#f57f17" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M118 182 Q126 188 132 192" stroke="#f57f17" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <path d="M118 182 Q122 190 124 196" stroke="#f57f17" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <ellipse cx="100" cy="116" rx="24" ry="18" fill="#fff9c4"/>
+        <circle cx="100" cy="82" r="38" fill="#fff9c4"/>
+        <ellipse cx="100" cy="60" rx="36" ry="22" fill="#1565c0"/>
+        <path d="M56 78 Q76 70 100 72 Q124 70 144 78" stroke="#1565c0" stroke-width="8" fill="none" stroke-linecap="round"/>
+        <path d="M52 90 Q78 83 108 86 L96 103 Q76 110 58 102 Z" fill="#f57f17"/>
+        <line x1="52" y1="90" x2="108" y2="86" stroke="#e65100" stroke-width="3"/>
+        <path d="M52 90 Q76 95 108 90 L96 103 Q76 106 58 102 Z" fill="#fb8c00"/>
+        <circle cx="84" cy="78" r="10" fill="white"/>
+        <circle cx="116" cy="78" r="10" fill="white"/>
+        <circle cx="85" cy="79" r="6" fill="#212121"/>
+        <circle cx="117" cy="79" r="6" fill="#212121"/>
+        <circle cx="87" cy="77" r="2.5" fill="white"/>
+        <circle cx="119" cy="77" r="2.5" fill="white"/>
+      `;
+    }
+  },
+  {
+    name: "Penguin",
+    color: "#1a237e",
+    bg: "#e8eaf6",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="148" rx="52" ry="50" fill="#1a237e"/>
+        <ellipse cx="100" cy="152" rx="34" ry="40" fill="#fffde7"/>
+        <path d="M50 122 Q32 148 40 174" stroke="#1a237e" stroke-width="20" fill="none" stroke-linecap="round"/>
+        <path d="M150 122 Q168 148 160 174" stroke="#1a237e" stroke-width="20" fill="none" stroke-linecap="round"/>
+        <circle cx="100" cy="72" r="42" fill="#1a237e"/>
+        <ellipse cx="100" cy="78" rx="26" ry="26" fill="#fffde7"/>
+        <circle cx="88" cy="66" r="12" fill="white"/>
+        <circle cx="112" cy="66" r="12" fill="white"/>
+        <circle cx="89" cy="67" r="7" fill="#1a1a1a"/>
+        <circle cx="113" cy="67" r="7" fill="#1a1a1a"/>
+        <circle cx="92" cy="64" r="3" fill="white"/>
+        <circle cx="116" cy="64" r="3" fill="white"/>
+        <path d="M88 86 Q100 80 112 86 L100 100 Z" fill="#ff8f00"/>
+        <ellipse cx="80" cy="194" rx="22" ry="9" fill="#ff8f00" transform="rotate(-12 80 194)"/>
+        <ellipse cx="120" cy="194" rx="22" ry="9" fill="#ff8f00" transform="rotate(12 120 194)"/>
+        <circle cx="80" cy="82" r="10" fill="#ff8a80" opacity="0.45"/>
+        <circle cx="120" cy="82" r="10" fill="#ff8a80" opacity="0.45"/>
+      `;
+    }
+  },
+  {
+    name: "Monkey",
+    color: "#795548",
+    bg: "#fff8e1",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="100" cy="148" rx="46" ry="42" fill="#795548"/>
+        <ellipse cx="100" cy="152" rx="28" ry="30" fill="#ffcc80"/>
+        <path d="M144 155 Q172 150 175 128 Q178 108 160 104 Q146 102 144 114" stroke="#795548" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M56 130 Q36 148 40 170" stroke="#795548" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M144 130 Q164 148 160 170" stroke="#795548" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <circle cx="40" cy="172" r="10" fill="#795548"/>
+        <circle cx="160" cy="172" r="10" fill="#795548"/>
+        <circle cx="100" cy="80" r="44" fill="#795548"/>
+        <circle cx="58" cy="76" r="22" fill="#795548"/>
+        <circle cx="58" cy="76" r="14" fill="#ffcc80"/>
+        <circle cx="142" cy="76" r="22" fill="#795548"/>
+        <circle cx="142" cy="76" r="14" fill="#ffcc80"/>
+        <ellipse cx="100" cy="92" rx="30" ry="24" fill="#ffcc80"/>
+        <circle cx="86" cy="72" r="11" fill="white"/>
+        <circle cx="114" cy="72" r="11" fill="white"/>
+        <circle cx="87" cy="73" r="6.5" fill="#3e2723"/>
+        <circle cx="115" cy="73" r="6.5" fill="#3e2723"/>
+        <circle cx="89" cy="71" r="2.5" fill="white"/>
+        <circle cx="117" cy="71" r="2.5" fill="white"/>
+        <ellipse cx="94" cy="92" rx="4" ry="4.5" fill="#5d4037"/>
+        <ellipse cx="106" cy="92" rx="4" ry="4.5" fill="#5d4037"/>
+        <path d="M84 100 Q100 114 116 100" stroke="#5d4037" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <rect x="70" y="180" width="20" height="18" rx="8" fill="#795548"/>
+        <rect x="110" y="180" width="20" height="18" rx="8" fill="#795548"/>
+      `;
+    }
+  },
+  {
+    name: "Crocodile",
+    color: "#2e7d32",
+    bg: "#e8f5e9",
+    draw: (svg) => {
+      svg.innerHTML = `
+        <ellipse cx="95" cy="152" rx="75" ry="28" fill="#388e3c"/>
+        <ellipse cx="95" cy="158" rx="56" ry="18" fill="#a5d6a7"/>
+        <polygon points="52,128 58,112 64,128" fill="#2e7d32"/>
+        <polygon points="68,126 74,110 80,126" fill="#2e7d32"/>
+        <polygon points="84,124 90,108 96,124" fill="#2e7d32"/>
+        <polygon points="100,124 106,108 112,124" fill="#2e7d32"/>
+        <polygon points="116,126 122,110 128,126" fill="#2e7d32"/>
+        <path d="M168 152 Q186 148 192 138" stroke="#388e3c" stroke-width="26" fill="none" stroke-linecap="round"/>
+        <path d="M184 150 Q196 144 198 132" stroke="#388e3c" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M60 170 Q48 180 42 192" stroke="#2e7d32" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M88 176 Q80 186 76 196" stroke="#2e7d32" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M108 176 Q116 186 120 196" stroke="#2e7d32" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M136 170 Q148 180 154 192" stroke="#2e7d32" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <ellipse cx="46" cy="118" rx="52" ry="20" fill="#388e3c"/>
+        <polygon points="14,112 20,98 26,112" fill="white"/>
+        <polygon points="26,110 32,96 38,110" fill="white"/>
+        <polygon points="38,108 44,94 50,108" fill="white"/>
+        <polygon points="50,108 56,94 62,108" fill="white"/>
+        <polygon points="62,108 68,94 74,108" fill="white"/>
+        <polygon points="74,108 80,96 86,110" fill="white"/>
+        <ellipse cx="46" cy="128" rx="50" ry="14" fill="#2e7d32"/>
+        <polygon points="18,124 24,136 30,124" fill="white"/>
+        <polygon points="30,122 36,134 42,122" fill="white"/>
+        <polygon points="44,122 50,134 56,122" fill="white"/>
+        <polygon points="58,122 64,134 70,122" fill="white"/>
+        <ellipse cx="76" cy="100" rx="13" ry="10" fill="#2e7d32"/>
+        <circle cx="76" cy="98" r="7" fill="#1b5e20"/>
+        <circle cx="77" cy="97" r="4" fill="#212121"/>
+        <circle cx="79" cy="95" r="1.5" fill="white"/>
+        <ellipse cx="100" cy="98" rx="13" ry="10" fill="#2e7d32"/>
+        <circle cx="100" cy="96" r="7" fill="#1b5e20"/>
+        <circle cx="101" cy="95" r="4" fill="#212121"/>
+        <circle cx="103" cy="93" r="1.5" fill="white"/>
+        <circle cx="14" cy="116" r="6" fill="#2e7d32"/>
+        <circle cx="24" cy="114" r="6" fill="#2e7d32"/>
+        <circle cx="15" cy="116" r="3" fill="#1b5e20"/>
+        <circle cx="25" cy="114" r="3" fill="#1b5e20"/>
+      `;
+    }
+  }
+];
+
+let currentIndex = 0;
+let isFlipped = false;
+let shuffled = shuffle(animals);
+
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function loadAnimal(animal) {
+  document.getElementById('cardFront').style.borderColor = animal.color;
+  document.getElementById('animalBg').style.background = animal.bg;
+  document.getElementById('animalName').style.color = animal.color;
+  document.getElementById('animalName').textContent = animal.name;
+  document.getElementById('soundBtn').style.background = animal.color;
+  animal.draw(document.getElementById('animalSvg'));
+}
+
+function sayName(name) {
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(name);
+  u.rate = 0.78;
+  u.pitch = 1.25;
+  u.volume = 1;
+  window.speechSynthesis.speak(u);
+}
+
+function flipCard() {
+  if (isFlipped) return;
+  isFlipped = true;
+  document.getElementById('card').classList.add('flipped');
+  loadAnimal(shuffled[currentIndex]);
+  document.getElementById('soundBtn').classList.remove('hidden');
+  spawnBurst();
+  setTimeout(() => sayName(shuffled[currentIndex].name), 700);
+}
+
+function spawnBurst() {
+  const emojis = ['⭐','🌟','✨','🎉','💫','🌈'];
+  for (let i = 0; i < 5; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.className = 'burst';
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      el.style.left = (15 + Math.random() * 70) + 'vw';
+      el.style.top = (15 + Math.random() * 55) + 'vh';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1200);
+    }, i * 120);
+  }
+}
+
+function nextCard() {
+  currentIndex = (currentIndex + 1) % shuffled.length;
+  if (currentIndex === 0) shuffled = shuffle(animals);
+  isFlipped = false;
+  document.getElementById('card').classList.remove('flipped');
+  document.getElementById('soundBtn').classList.add('hidden');
+  window.speechSynthesis.cancel();
+}
+
+function playSound() {
+  sayName(shuffled[currentIndex].name);
+  const btn = document.getElementById('soundBtn');
+  btn.style.transform = 'scale(1.15)';
+  setTimeout(() => btn.style.transform = '', 200);
+}
+</script>
+</body>
+</html>

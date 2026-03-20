@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌪️ Tornado Memory Game</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: radial-gradient(ellipse at top, #1a1a3a 0%, #0a0a20 50%, #1a0a2a 100%);
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 12px 28px;
+    overflow-x: hidden;
+  }
+
+  /* Animated cloud strip */
+  .cloud-strip {
+    width: 100%;
+    max-width: 700px;
+    height: 22px;
+    background: linear-gradient(90deg, #2a2a4a, #3a3a6a, #2a2a5a, #3a3a6a, #2a2a4a);
+    border-radius: 6px;
+    margin: 6px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .cloud-strip::after {
+    content: '☁️☁️☁️☁️☁️☁️☁️☁️☁️☁️☁️☁️';
+    position: absolute;
+    top: 1px; left: 0;
+    font-size: 14px;
+    letter-spacing: 2px;
+    animation: cloudScroll 8s linear infinite;
+    white-space: nowrap;
+  }
+  @keyframes cloudScroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  h1 {
+    color: #AADDFF;
+    font-size: clamp(1.5rem, 5vw, 2.3rem);
+    text-align: center;
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px #88BBFF, 0 0 40px #5599FF;
+    margin: 8px 0 4px;
+  }
+
+  .subtitle {
+    color: #9988CC;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .scorebar {
+    display: flex;
+    gap: 32px;
+    background: rgba(255,255,255,0.06);
+    padding: 10px 32px;
+    border-radius: 20px;
+    border: 1px solid rgba(170,200,255,0.25);
+    margin-bottom: 20px;
+  }
+  .score-item { text-align: center; }
+  .score-num { color: #AADDFF; font-size: 1.6rem; font-weight: bold; }
+  .score-match { color: #AAFFDD; font-size: 1.6rem; font-weight: bold; }
+  .score-label { color: #aaa; font-size: 0.68rem; letter-spacing: 1px; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    max-width: 700px;
+    width: 100%;
+    padding: 0 6px;
+  }
+
+  .card-wrapper {
+    perspective: 800px;
+    aspect-ratio: 1 / 1.1;
+    cursor: pointer;
+  }
+
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.45s cubic-bezier(.4,1.3,.6,1);
+  }
+  .card-inner.flipped { transform: rotateY(180deg); }
+
+  .card-back, .card-front {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-back {
+    background: linear-gradient(135deg, #1a1a3a, #0d0d25, #1a1040);
+    border: 3px solid #4455AA;
+    box-shadow: 0 6px 18px rgba(68,85,170,0.35);
+    font-size: 3rem;
+  }
+
+  .card-front {
+    background: linear-gradient(160deg, #12122a, #1a1030);
+    border: 3px solid #445;
+    transform: rotateY(180deg);
+    padding: 10px 6px 8px;
+    gap: 6px;
+  }
+  .card-front.matched {
+    border-color: #AADDFF;
+    box-shadow: 0 0 22px rgba(170,200,255,0.5);
+  }
+
+  .tornado-svg {
+    width: 75%;
+    max-width: 110px;
+    display: block;
+    margin: 0 auto;
+  }
+
+  .tornado-name {
+    font-size: clamp(0.6rem, 1.8vw, 0.82rem);
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #8899CC;
+    text-align: center;
+    text-transform: uppercase;
+  }
+  .card-front.matched .tornado-name { color: #AADDFF; }
+  .match-tick { font-size: 1.2rem; }
+
+  .new-game-btn {
+    margin-top: 22px;
+    padding: 14px 40px;
+    background: linear-gradient(135deg, #222255, #111133);
+    color: #AADDFF;
+    border: 2px solid #4466AA;
+    border-radius: 28px;
+    font-size: 1.05rem;
+    font-family: monospace;
+    font-weight: bold;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(68,102,170,0.4);
+    text-transform: uppercase;
+    -webkit-appearance: none;
+  }
+
+  .win-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .win-overlay.show { display: flex; }
+
+  .win-box {
+    background: linear-gradient(135deg, #0a0a1a, #151530);
+    border: 4px solid #AADDFF;
+    border-radius: 28px;
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(170,200,255,0.45);
+    max-width: 340px;
+    width: 90%;
+  }
+  .win-trophy { font-size: 4rem; margin-bottom: 8px; }
+  .win-title { color: #AADDFF; font-size: 2.2rem; font-weight: bold; letter-spacing: 3px; text-shadow: 0 0 20px #AADDFF; }
+  .win-moves { color: #ccddff; font-size: 1rem; margin: 10px 0 6px; }
+  .win-stars { font-size: 2.2rem; margin: 8px 0 16px; }
+  .win-tornadoes { font-size: 2.2rem; margin-bottom: 22px; letter-spacing: 4px; }
+  .play-again-btn {
+    padding: 15px 38px;
+    background: linear-gradient(135deg, #AADDFF, #5599FF);
+    color: #000;
+    border: none;
+    border-radius: 28px;
+    font-size: 1.1rem;
+    font-family: monospace;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 2px;
+    -webkit-appearance: none;
+  }
+
+  /* Tornado spin animation on matched cards */
+  @keyframes spin {
+    from { transform: rotate(-5deg); }
+    to { transform: rotate(5deg); }
+  }
+  .matched .tornado-svg {
+    animation: spin 0.4s ease-in-out infinite alternate;
+  }
+</style>
+</head>
+<body>
+
+<div class="cloud-strip"></div>
+
+<h1>🌪️ Tornado Memory! 🌪️</h1>
+<p class="subtitle">Match the twisty tornadoes!</p>
+
+<div class="scorebar">
+  <div class="score-item">
+    <div class="score-num" id="moves-count">0</div>
+    <div class="score-label">MOVES</div>
+  </div>
+  <div class="score-item">
+    <div class="score-match" id="match-count">0/6</div>
+    <div class="score-label">MATCHED</div>
+  </div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<button class="new-game-btn" onclick="initGame()">🔄 New Storm!</button>
+
+<div class="cloud-strip" style="margin-top:18px"></div>
+
+<!-- WIN SCREEN -->
+<div class="win-overlay" id="win-overlay">
+  <div class="win-box">
+    <div class="win-trophy">🏆</div>
+    <div class="win-title">YOU WIN!</div>
+    <div class="win-moves" id="win-moves-text"></div>
+    <div class="win-stars" id="win-stars"></div>
+    <div class="win-tornadoes">🌪️🌪️🌪️</div>
+    <button class="play-again-btn" onclick="initGame(); document.getElementById('win-overlay').classList.remove('show')">🌪️ PLAY AGAIN!</button>
+  </div>
+</div>
+
+<script>
+// Each tornado has a name, primary swirl colour, and a highlight colour
+const TORNADOES = [
+  { id:1, name:"RED TWISTER",    c1:"#FF3333", c2:"#FF8888", c3:"#FFBBBB", outline:"#AA0000" },
+  { id:2, name:"BLUE WHIRL",     c1:"#3366FF", c2:"#66AAFF", c3:"#AACCFF", outline:"#0022AA" },
+  { id:3, name:"GREEN GUST",     c1:"#22BB44", c2:"#66DD88", c3:"#AAFFCC", outline:"#007722" },
+  { id:4, name:"PURPLE SPIN",    c1:"#9933CC", c2:"#CC77FF", c3:"#DDAAFF", outline:"#550099" },
+  { id:5, name:"ORANGE WHIP",    c1:"#FF8800", c2:"#FFBB44", c3:"#FFDDAA", outline:"#AA5500" },
+  { id:6, name:"PINK SPIRAL",    c1:"#FF44AA", c2:"#FF88CC", c3:"#FFCCEE", outline:"#AA0066" },
+];
+
+function tornadoSVG(t) {
+  // Hand-drawn cartoon tornado: wide top, narrow bottom, swirl lines
+  return `<svg class="tornado-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg">
+    <!-- Cloud top -->
+    <ellipse cx="50" cy="22" rx="42" ry="18" fill="${t.c2}" stroke="${t.outline}" stroke-width="2.5"/>
+    <ellipse cx="30" cy="16" rx="20" ry="14" fill="${t.c1}" stroke="${t.outline}" stroke-width="2"/>
+    <ellipse cx="68" cy="14" rx="18" ry="13" fill="${t.c1}" stroke="${t.outline}" stroke-width="2"/>
+    <ellipse cx="50" cy="12" rx="24" ry="15" fill="${t.c2}" stroke="${t.outline}" stroke-width="2"/>
+
+    <!-- Funnel body - wide to narrow -->
+    <path d="M18,30 Q10,55 28,75 Q38,95 44,125 L56,125 Q62,95 72,75 Q90,55 82,30 Z"
+          fill="${t.c1}" stroke="${t.outline}" stroke-width="2.5"/>
+
+    <!-- Swirl lines (lighter arcs across the funnel) -->
+    <path d="M22,38 Q50,44 78,38" fill="none" stroke="${t.c3}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M25,50 Q50,58 75,50" fill="none" stroke="${t.c3}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M28,63 Q50,71 72,63" fill="none" stroke="${t.c3}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M33,76 Q50,83 67,76" fill="none" stroke="${t.c3}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M38,89 Q50,95 62,89" fill="none" stroke="${t.c3}" stroke-width="2" stroke-linecap="round"/>
+    <path d="M42,102 Q50,107 58,102" fill="none" stroke="${t.c3}" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Little swirl at bottom tip -->
+    <ellipse cx="50" cy="124" rx="8" ry="4" fill="${t.c2}" stroke="${t.outline}" stroke-width="1.5"/>
+
+    <!-- Cartoon eyes on the cloud -->
+    <circle cx="40" cy="17" r="4.5" fill="white" stroke="${t.outline}" stroke-width="1.5"/>
+    <circle cx="60" cy="17" r="4.5" fill="white" stroke="${t.outline}" stroke-width="1.5"/>
+    <circle cx="41" cy="18" r="2" fill="#222"/>
+    <circle cx="61" cy="18" r="2" fill="#222"/>
+    <!-- Pupils shine -->
+    <circle cx="42" cy="17" r="0.8" fill="white"/>
+    <circle cx="62" cy="17" r="0.8" fill="white"/>
+
+    <!-- Smile -->
+    <path d="M41,26 Q50,33 59,26" fill="none" stroke="${t.outline}" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Little debris bits -->
+    <rect x="8"  y="68" width="7" height="4" rx="1" fill="${t.c2}" stroke="${t.outline}" stroke-width="1" transform="rotate(-20,11,70)"/>
+    <rect x="84" y="72" width="6" height="3" rx="1" fill="${t.c2}" stroke="${t.outline}" stroke-width="1" transform="rotate(15,87,73)"/>
+    <circle cx="12" cy="82" r="3" fill="${t.c2}" stroke="${t.outline}" stroke-width="1"/>
+    <circle cx="88" cy="60" r="2.5" fill="${t.c2}" stroke="${t.outline}" stroke-width="1"/>
+  </svg>`;
+}
+
+let flipped = [], matched = [], moves = 0, locked = false, cards = [];
+
+function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
+
+function initGame() {
+  flipped = []; matched = []; moves = 0; locked = false;
+  cards = shuffle([...TORNADOES, ...TORNADOES].map((t, i) => ({ uid:`${t.id}-${i}`, tornado:t })));
+  document.getElementById('moves-count').textContent = '0';
+  document.getElementById('match-count').textContent = `0/${TORNADOES.length}`;
+  document.getElementById('win-overlay').classList.remove('show');
+  renderGrid();
+}
+
+function cardHTML(card, isMatched) {
+  return `
+    <div class="card-back">⚡</div>
+    <div class="card-front ${isMatched ? 'matched' : ''}">
+      ${tornadoSVG(card.tornado)}
+      <div class="tornado-name">${card.tornado.name}</div>
+      ${isMatched ? '<div class="match-tick">✅</div>' : ''}
+    </div>`;
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  cards.forEach((card, i) => {
+    const isFlipped = flipped.includes(i) || matched.includes(card.tornado.id);
+    const isMatched = matched.includes(card.tornado.id);
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    wrapper.innerHTML = `<div class="card-inner ${isFlipped ? 'flipped' : ''}" id="card-${i}">${cardHTML(card, isMatched)}</div>`;
+    wrapper.addEventListener('click', () => handleClick(i));
+    grid.appendChild(wrapper);
+  });
+}
+
+function handleClick(i) {
+  if (locked || flipped.includes(i) || matched.includes(cards[i].tornado.id)) return;
+  if (flipped.length === 2) return;
+
+  flipped.push(i);
+  document.getElementById(`card-${i}`).classList.add('flipped');
+
+  if (flipped.length === 2) {
+    moves++;
+    document.getElementById('moves-count').textContent = moves;
+    const [a, b] = flipped;
+
+    if (cards[a].tornado.id === cards[b].tornado.id) {
+      matched.push(cards[a].tornado.id);
+      document.getElementById('match-count').textContent = `${matched.length}/${TORNADOES.length}`;
+      [a, b].forEach(idx => {
+        const front = document.querySelector(`#card-${idx} .card-front`);
+        if (front) {
+          front.classList.add('matched');
+          front.innerHTML = tornadoSVG(cards[idx].tornado) + `<div class="tornado-name">${cards[idx].tornado.name}</div><div class="match-tick">✅</div>`;
+        }
+      });
+      flipped = [];
+      if (matched.length === TORNADOES.length) setTimeout(showWin, 700);
+    } else {
+      locked = true;
+      setTimeout(() => {
+        flipped.forEach(idx => document.getElementById(`card-${idx}`).classList.remove('flipped'));
+        flipped = [];
+        locked = false;
+      }, 1200);
+    }
+  }
+}
+
+function showWin() {
+  const stars = moves <= 8 ? 3 : moves <= 13 ? 2 : 1;
+  document.getElementById('win-moves-text').textContent = `Finished in ${moves} moves!`;
+  document.getElementById('win-stars').textContent = '⭐'.repeat(stars) + '🌑'.repeat(3 - stars);
+  document.getElementById('win-overlay').classList.add('show');
+}
+
+initGame();
+</script>
+</body>
+</html>
